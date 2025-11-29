@@ -1,12 +1,36 @@
-from sentence_transformers import SentenceTransformer, util
+import numpy as np
+import faiss
 
-model = SentenceTransformer("BAAI/bge-base-en-v1.5")
+def create_faiss_index(embeddings):
+    """
+    Create a FAISS index from chunk embeddings.
+    """
+    embeddings = np.array(embeddings).astype("float32")
+    dim = embeddings.shape[1]
+    index = faiss.IndexFlatL2(dim)  # L2 distance metric
+    index.add(embeddings)
+    return index
 
-def create_embeddings(chunks):
-    return model.encode(chunks, convert_to_tensor=True, normalize_embeddings=True)
+def retrieve(query_emb, index, chunks, top_k=3, threshold=1.0):
+    """
+    Retrieve relevant PDF chunks for the query embedding.
+    
+    Args:
+        query_emb: 1D numpy array embedding of query
+        index: FAISS index of chunk embeddings
+        chunks: list of text chunks
+        top_k: number of top results to return
+        threshold: distance threshold (lower = more similar)
+    Returns:
+        List of relevant chunks
+    """
+    query_emb = np.array(query_emb, dtype="float32").reshape(1, -1)
 
-def retrieve_top_chunk(query, chunks, chunk_embeddings, top_k=1):
-    query_embedding = model.encode(query, convert_to_tensor=True, normalize_embeddings=True)
-    hits = util.semantic_search(query_embedding, chunk_embeddings, top_k=top_k)
-    top_index = hits[0][0]['corpus_id']
-    return chunks[top_index]
+    distances, indices = index.search(query_emb, top_k)
+    
+    relevant_chunks = []
+    for dist, idx in zip(distances[0], indices[0]):
+        if idx < len(chunks) and (dist <= threshold or threshold >= 1.0):
+            relevant_chunks.append(chunks[idx])
+    
+    return relevant_chunks
