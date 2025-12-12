@@ -11,7 +11,7 @@ embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
 # ========================================
 # Gemini API configuration (Google)
 # ========================================
-GEMINI_API_KEY = "AIzaSyCdR_LtWXQaLthsDQsHqcArn4FUls129FE"
+GEMINI_API_KEY = ""
 MODEL_NAME = "gemini-2.0-flash"
 GEMINI_API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL_NAME}:generateContent"
 
